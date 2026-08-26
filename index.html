@@ -115,6 +115,7 @@
   <section id="venues" class="hidden">
     <div class="filters" style="border-top:none;padding-top:0">
       <select id="v_hotel"><option value="">ホテル: 全て</option></select>
+      <select id="v_ward"><option value="">区: 全て</option></select>
       <select id="v_area"><option value="">エリア: 全て</option></select>
       <select id="v_layout" title="人数フィルタの対象となるレイアウト形式">
         <option value="school">形式: スクール</option>
@@ -6523,7 +6524,9 @@ let vSortK = "school", vSortAsc = false, venuesInit = false;
 function venueSetup(){
   if (venuesInit) return; venuesInit = true;
   fillSelect(document.getElementById("v_hotel"), "ホテル", VENUES.map(v => v.hotel));
-  fillSelect(document.getElementById("v_area"), "エリア", VENUES.map(v => v.area));
+  fillSelect(document.getElementById("v_ward"), "区", VENUES.map(v => v.area.split("/")[0]));
+  fillVenueAreas();
+  document.getElementById("v_ward").addEventListener("change", () => { fillVenueAreas(); renderVenues(); });
   ["v_hotel","v_area","v_layout","v_size"].forEach(id =>
     document.getElementById(id).addEventListener("change", renderVenues));
   const vq = document.getElementById("v_q");
@@ -6535,10 +6538,19 @@ function venueSetup(){
     renderVenues();
   }));
 }
+function fillVenueAreas(){
+  const ward = document.getElementById("v_ward").value;
+  const sel = document.getElementById("v_area");
+  const prev = sel.value;
+  const areas = VENUES.map(v => v.area).filter(a => !ward || a.split("/")[0] === ward);
+  fillSelect(sel, "エリア", areas);
+  if ([...sel.options].some(o => o.value === prev)) sel.value = prev;
+}
 function renderVenues(){
   venueSetup();
   const q = document.getElementById("v_q").value.trim().toLowerCase();
   const hotel = document.getElementById("v_hotel").value;
+  const ward = document.getElementById("v_ward").value;
   const area = document.getElementById("v_area").value;
   const layout = document.getElementById("v_layout").value;
   const size = document.getElementById("v_size").value;
@@ -6546,6 +6558,7 @@ function renderVenues(){
   if (size) { const p = size.split("-"); lo = +p[0]; hi = p[1] === "" ? Infinity : +p[1]; }
   const rows = VENUES.filter(v =>
     (!hotel || v.hotel === hotel) &&
+    (!ward || v.area.split("/")[0] === ward) &&
     (!area || v.area === area) &&
     (!size || (v[layout] != null && v[layout] >= lo && v[layout] <= hi)) &&
     (!q || (v.hotel + " " + v.area + " " + (v.access||"") + " " + v.room + " " + (v.floor||""))
