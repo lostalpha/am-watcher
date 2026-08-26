@@ -57,6 +57,8 @@
   .repitem.active { border-color:var(--accent); color:var(--accent); font-weight:600; }
   .repitem .rd { color:var(--muted); font-size:11px; margin-right:6px; }
   #repframe { width:100%; height:calc(100vh - 220px); min-height:500px; border:1px solid var(--line); border-radius:8px; background:#fff; }
+  td.vnum { text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  td.vsel { background:#eef2ff; font-weight:600; }
   .hidden { display:none; }
   #more.hidden { display:none; }
 </style>
@@ -112,14 +114,30 @@
   <button id="more" class="hidden">さらに表示</button>
   <section id="venues" class="hidden">
     <div class="filters" style="border-top:none;padding-top:0">
+      <select id="v_hotel"><option value="">ホテル: 全て</option></select>
       <select id="v_area"><option value="">エリア: 全て</option></select>
-      <input type="text" id="v_q" placeholder="キーワード（ホテル名・駅・会場名・特徴）">
+      <select id="v_layout" title="人数フィルタの対象となるレイアウト形式">
+        <option value="school">形式: スクール</option>
+        <option value="theater">形式: シアター</option>
+        <option value="banquet">形式: 正餐（着席）</option>
+        <option value="buffet">形式: 立食</option>
+      </select>
+      <select id="v_size">
+        <option value="">人数: 全て</option>
+        <option value="0-50">〜50名</option>
+        <option value="51-100">51〜100名</option>
+        <option value="101-200">101〜200名</option>
+        <option value="201-500">201〜500名</option>
+        <option value="501-">501名〜</option>
+      </select>
+      <input type="text" id="v_q" placeholder="キーワード（ホテル名・部屋名・駅）">
       <span id="v_stats"></span>
     </div>
     <table>
       <thead><tr>
-        <th data-vk="name">ホテル</th><th data-vk="area">エリア</th><th>アクセス</th>
-        <th data-vk="capacity">最大宴会場（収容目安）</th><th data-vk="rooms">会場数</th><th>特徴</th>
+        <th data-vk="hotel">ホテル</th><th data-vk="area">エリア</th><th data-vk="room">部屋</th>
+        <th data-vk="sqm">面積㎡</th><th data-vk="school">スクール</th><th data-vk="theater">シアター</th>
+        <th data-vk="banquet">正餐</th><th data-vk="buffet">立食</th>
       </tr></thead>
       <tbody id="vtb"></tbody>
     </table>
@@ -324,434 +342,1124 @@ function renderMore(){
 
 const VENUE_DEF = {src:"__venues__", label:"会場リスト", venues:true};
 const VENUES = [
-  {
-    "name": "帝国ホテル東京",
-    "area": "千代田区/日比谷",
-    "access": "日比谷駅 徒歩1分(直結)、有楽町駅 徒歩5分",
-    "largestRoom": "孔雀の間",
-    "capacity": 2000,
-    "rooms": null,
-    "features": [
-      "日比谷駅直結",
-      "同時通訳ブース完備",
-      "老舗ホテルの格式とサービス",
-      "宴会場・会議室が多数"
-    ],
-    "url": "https://www.imperialhotel.co.jp/"
-  },
-  {
-    "name": "ホテルニューオータニ東京",
-    "area": "千代田区/紀尾井町",
-    "access": "赤坂見附駅・四ツ谷駅 徒歩約10分",
-    "largestRoom": "鶴の間",
-    "capacity": 3000,
-    "rooms": null,
-    "features": [
-      "日本庭園を望む立地",
-      "大型国際会議に対応",
-      "宴会場数が豊富",
-      "車寄せ・大型駐車場あり"
-    ],
-    "url": "https://www.newotani.co.jp/tokyo/"
-  },
-  {
-    "name": "ホテルオークラ東京(The Okura Tokyo)",
-    "area": "港区/虎ノ門・六本木一丁目",
-    "access": "神谷町駅 徒歩4分、六本木一丁目駅 徒歩5分",
-    "largestRoom": "平安の間",
-    "capacity": null,
-    "rooms": null,
-    "features": [
-      "国際会議・要人来訪の実績多数",
-      "同時通訳ブース完備",
-      "日本美を意識した内装",
-      "隣接オフィス棟と一体開発"
-    ],
-    "url": "https://theokuratokyo.jp/"
-  },
-  {
-    "name": "パレスホテル東京",
-    "area": "千代田区/丸の内",
-    "access": "大手町駅 徒歩1分(直結)、東京駅 徒歩8分",
-    "largestRoom": "グランドボールルーム",
-    "capacity": null,
-    "rooms": null,
-    "features": [
-      "大手町駅直結",
-      "皇居を望む立地",
-      "ラグジュアリーホテル",
-      "少人数〜中規模MICEに強い"
-    ],
-    "url": "https://www.palacehoteltokyo.com/"
-  },
-  {
-    "name": "ザ・プリンスパークタワー東京",
-    "area": "港区/芝公園",
-    "access": "御成門駅・大門駅 徒歩約5〜8分",
-    "largestRoom": "プリンスホール",
-    "capacity": null,
-    "rooms": null,
-    "features": [
-      "東京タワーを望む立地",
-      "大型ボールルームあり",
-      "増上寺に隣接",
-      "宿泊一体型MICEに対応"
-    ],
-    "url": "https://www.princehotels.co.jp/parktower/"
-  },
-  {
-    "name": "グランドプリンスホテル新高輪",
-    "area": "港区/高輪",
-    "access": "品川駅 徒歩約7分(送迎バスあり)",
-    "largestRoom": "飛天",
-    "capacity": 5000,
-    "rooms": null,
-    "features": [
-      "国内最大級の宴会場「飛天」",
-      "広大な日本庭園",
-      "大型国際会議・展示会に対応",
-      "大型駐車場・車寄せあり"
-    ],
-    "url": "https://www.princehotels.co.jp/shintakanawa/"
-  },
-  {
-    "name": "品川プリンスホテル",
-    "area": "港区/高輪",
-    "access": "品川駅高輪口 徒歩2分",
-    "largestRoom": "コンベンションホール",
-    "capacity": null,
-    "rooms": null,
-    "features": [
-      "品川駅直結・徒歩圏",
-      "大規模宿泊収容力",
-      "多目的コンベンション施設あり",
-      "エンタメ施設が充実"
-    ],
-    "url": "https://www.princehotels.co.jp/shinagawa/"
-  },
-  {
-    "name": "京王プラザホテル",
-    "area": "新宿区/西新宿",
-    "access": "新宿駅西口 徒歩5分(地下道直結)",
-    "largestRoom": "コンコード",
-    "capacity": null,
-    "rooms": null,
-    "features": [
-      "新宿駅西口直結",
-      "超高層ホテルの草分け",
-      "宴会場・会議室が多数",
-      "同時通訳設備あり"
-    ],
-    "url": "https://www.keioplaza.co.jp/"
-  },
-  {
-    "name": "ヒルトン東京",
-    "area": "新宿区/西新宿",
-    "access": "西新宿五丁目駅 徒歩4分、新宿駅西口からシャトルバス",
-    "largestRoom": "グランドボールルーム",
-    "capacity": null,
-    "rooms": null,
-    "features": [
-      "新宿副都心に立地",
-      "大型宴会場あり",
-      "新宿駅からシャトルバスあり",
-      "外資系運営のMICEノウハウ"
-    ],
-    "url": "https://www.hiltontokyo.jp/"
-  },
-  {
-    "name": "ハイアットリージェンシー東京",
-    "area": "新宿区/西新宿",
-    "access": "西新宿駅 徒歩7分、都庁前駅 徒歩8分",
-    "largestRoom": "グランドボールルーム",
-    "capacity": null,
-    "rooms": null,
-    "features": [
-      "新宿エリアに立地",
-      "大型宴会場を保有",
-      "会議・宴会設備が充実",
-      "落ち着いた内装"
-    ],
-    "url": "https://www.hyattregencytokyo.co.jp/"
-  },
-  {
-    "name": "パークハイアット東京",
-    "area": "新宿区/西新宿(超高層階)",
-    "access": "都庁前駅 徒歩8分、新宿駅 徒歩12分",
-    "largestRoom": "ボールルーム",
-    "capacity": null,
-    "rooms": null,
-    "features": [
-      "新宿超高層階に立地",
-      "ラグジュアリーな少人数MICE向け",
-      "眺望の良い会場",
-      "小規模会議室中心"
-    ],
-    "url": "https://www.parkhyatttokyo.com/"
-  },
-  {
-    "name": "ウェスティンホテル東京",
-    "area": "渋谷区/恵比寿",
-    "access": "恵比寿駅 徒歩7分(恵比寿ガーデンプレイス内)",
-    "largestRoom": "グランドボールルーム",
-    "capacity": null,
-    "rooms": null,
-    "features": [
-      "恵比寿ガーデンプレイス内",
-      "欧風の落ち着いた内装",
-      "中規模宴会場が中心",
-      "レストラン・バー充実"
-    ],
-    "url": "https://www.westin-tokyo.co.jp/"
-  },
-  {
-    "name": "グランドハイアット東京",
-    "area": "港区/六本木",
-    "access": "六本木駅 徒歩3分(六本木ヒルズ内)",
-    "largestRoom": "グランドボールルーム",
-    "capacity": null,
-    "rooms": null,
-    "features": [
-      "六本木ヒルズ内に立地",
-      "モダンな大型ボールルーム",
-      "同時通訳ブースあり",
-      "商業施設と一体"
-    ],
-    "url": "https://tokyo.grand.hyatt.com/"
-  },
-  {
-    "name": "ANAインターコンチネンタルホテル東京",
-    "area": "港区/赤坂",
-    "access": "溜池山王駅 徒歩1分(直結)、六本木一丁目駅 徒歩5分",
-    "largestRoom": "ボールルーム",
-    "capacity": null,
-    "rooms": null,
-    "features": [
-      "溜池山王駅直結",
-      "大型ボールルームあり",
-      "国会議事堂・霞が関に近接",
-      "要人利用の実績多数"
-    ],
-    "url": "https://www.anaintercontinental-tokyo.jp/"
-  },
-  {
-    "name": "ザ・リッツ・カールトン東京",
-    "area": "港区/六本木(東京ミッドタウン内)",
-    "access": "六本木駅 徒歩3分(東京ミッドタウン内)",
-    "largestRoom": "The Ballroom",
-    "capacity": null,
-    "rooms": null,
-    "features": [
-      "東京ミッドタウン内・高層階",
-      "ラグジュアリーな少人数MICE向け",
-      "眺望の良いボールルーム",
-      "きめ細やかなサービス"
-    ],
-    "url": "https://www.ritzcarltontokyo.com/"
-  },
-  {
-    "name": "マンダリンオリエンタル東京",
-    "area": "中央区/日本橋",
-    "access": "三越前駅 徒歩1分(直結)、東京駅 徒歩10分",
-    "largestRoom": "バンケットルーム",
-    "capacity": null,
-    "rooms": null,
-    "features": [
-      "三越前駅直結・高層階",
-      "少人数〜中規模MICEに特化",
-      "眺望の良い会場",
-      "高級レストラン併設"
-    ],
-    "url": "https://www.mandarinoriental.com/"
-  },
-  {
-    "name": "コンラッド東京",
-    "area": "港区/汐留",
-    "access": "汐留駅 徒歩1分、新橋駅 徒歩5分",
-    "largestRoom": "The Ballroom",
-    "capacity": null,
-    "rooms": null,
-    "features": [
-      "汐留・浜離宮に近接",
-      "大型ボールルームあり",
-      "近未来的な内装",
-      "オフィス街至近"
-    ],
-    "url": "https://conradtokyo.co.jp/"
-  },
-  {
-    "name": "シャングリ・ラ東京",
-    "area": "千代田区/丸の内",
-    "access": "東京駅 徒歩1分(直結)",
-    "largestRoom": "シャングリ・ラ ボールルーム",
-    "capacity": null,
-    "rooms": null,
-    "features": [
-      "東京駅直結・徒歩1分",
-      "高層階の宴会場",
-      "中規模MICEに強い",
-      "アジア発ラグジュアリーブランド"
-    ],
-    "url": "https://www.shangri-la.com/tokyo/shangrila/"
-  },
-  {
-    "name": "ホテル雅叙園東京",
-    "area": "目黒区/下目黒",
-    "access": "目黒駅 徒歩3分",
-    "largestRoom": "鳳凰の間",
-    "capacity": null,
-    "rooms": null,
-    "features": [
-      "「昭和の竜宮城」の内装美",
-      "大型宴会場「鳳凰の間」",
-      "結婚式・大規模宴会の実績多数",
-      "緑豊かな庭園"
-    ],
-    "url": "https://www.hotelgajoen-tokyo.com/"
-  },
-  {
-    "name": "セルリアンタワー東急ホテル",
-    "area": "渋谷区/桜丘町",
-    "access": "渋谷駅 徒歩4分",
-    "largestRoom": "ボールルーム",
-    "capacity": null,
-    "rooms": null,
-    "features": [
-      "渋谷駅至近の高層ホテル",
-      "能楽堂を併設",
-      "中規模宴会場が中心",
-      "商業施設と一体"
-    ],
-    "url": "https://www.ceruleantower-hotel.com/"
-  },
-  {
-    "name": "ロイヤルパークホテル",
-    "area": "中央区/日本橋蛎殻町",
-    "access": "水天宮前駅 徒歩1分(直結)",
-    "largestRoom": "ロイヤルホール",
-    "capacity": null,
-    "rooms": null,
-    "features": [
-      "水天宮前駅直結",
-      "中規模会議・宴会に対応",
-      "落ち着いたビジネス立地",
-      "日本橋エリア"
-    ],
-    "url": "https://www.rph.co.jp/"
-  },
-  {
-    "name": "第一ホテル東京",
-    "area": "港区/新橋",
-    "access": "新橋駅 徒歩2分",
-    "largestRoom": "宴会場",
-    "capacity": null,
-    "rooms": null,
-    "features": [
-      "新橋駅至近",
-      "老舗ビジネスホテルの宴会場",
-      "中規模宴会に対応",
-      "アクセスの良さ"
-    ],
-    "url": "https://www.daiichihotels.com/"
-  },
-  {
-    "name": "東京ドームホテル",
-    "area": "文京区/後楽",
-    "access": "後楽園駅・水道橋駅 徒歩2〜3分",
-    "largestRoom": "グランドボールルーム",
-    "capacity": null,
-    "rooms": null,
-    "features": [
-      "東京ドームに隣接",
-      "大規模収容力",
-      "高層階からの眺望",
-      "エンタメ施設と一体"
-    ],
-    "url": "https://www.tokyodome-hotels.co.jp/"
-  },
-  {
-    "name": "グランドニッコー東京台場",
-    "area": "港区/台場",
-    "access": "台場駅 徒歩3分",
-    "largestRoom": "ボールルーム",
-    "capacity": null,
-    "rooms": null,
-    "features": [
-      "臨海副都心・台場エリア",
-      "東京湾を望む眺望",
-      "大型宴会場あり",
-      "宿泊収容力が高い"
-    ],
-    "url": "https://www.grandnikko.com/"
-  },
-  {
-    "name": "ホテル椿山荘東京",
-    "area": "文京区/目白台",
-    "access": "目白駅・江戸川橋駅 徒歩8〜10分(送迎バスあり)",
-    "largestRoom": "グランドボールルーム",
-    "capacity": null,
-    "rooms": null,
-    "features": [
-      "緑豊かな日本庭園(椿山荘)",
-      "大規模挙式・宴会の実績多数",
-      "都心とは思えない自然環境",
-      "送迎バスあり"
-    ],
-    "url": "https://www.hotel-chinzanso-tokyo.jp/"
-  }
+ {
+  "hotel": "帝国ホテル東京",
+  "area": "千代田区/日比谷",
+  "access": "日比谷駅 徒歩1分(直結)、有楽町駅 徒歩5分",
+  "room": "孔雀の間(東西)",
+  "floor": null,
+  "sqm": 1965,
+  "school": 1200,
+  "theater": 1800,
+  "banquet": null,
+  "buffet": null,
+  "url": "https://www.imperialhotel.co.jp/j/tokyo/banquet/"
+ },
+ {
+  "hotel": "帝国ホテル東京",
+  "area": "千代田区/日比谷",
+  "access": "日比谷駅 徒歩1分(直結)、有楽町駅 徒歩5分",
+  "room": "光の間",
+  "floor": null,
+  "sqm": 550,
+  "school": 300,
+  "theater": 500,
+  "banquet": 300,
+  "buffet": 400,
+  "url": "https://www.imperialhotel.co.jp/j/tokyo/banquet/"
+ },
+ {
+  "hotel": "帝国ホテル東京",
+  "area": "千代田区/日比谷",
+  "access": "日比谷駅 徒歩1分(直結)、有楽町駅 徒歩5分",
+  "room": "富士の間",
+  "floor": null,
+  "sqm": 1236,
+  "school": null,
+  "theater": null,
+  "banquet": 600,
+  "buffet": 1000,
+  "url": "https://www.imperialhotel.co.jp/j/tokyo/banquet/"
+ },
+ {
+  "hotel": "帝国ホテル東京",
+  "area": "千代田区/日比谷",
+  "access": "日比谷駅 徒歩1分(直結)、有楽町駅 徒歩5分",
+  "room": "鶴の間",
+  "floor": null,
+  "sqm": 178,
+  "school": 100,
+  "theater": 150,
+  "banquet": 120,
+  "buffet": 120,
+  "url": "https://www.imperialhotel.co.jp/j/tokyo/banquet/"
+ },
+ {
+  "hotel": "ホテルニューオータニ東京",
+  "area": "千代田区/紀尾井町",
+  "access": "赤坂見附駅・四ツ谷駅 徒歩約10分",
+  "room": "鶴の間",
+  "floor": null,
+  "sqm": 1992,
+  "school": 1200,
+  "theater": 2184,
+  "banquet": 1150,
+  "buffet": 2500,
+  "url": "https://www.newotani.co.jp/tokyo/banquet/hall/"
+ },
+ {
+  "hotel": "ホテルニューオータニ東京",
+  "area": "千代田区/紀尾井町",
+  "access": "赤坂見附駅・四ツ谷駅 徒歩約10分",
+  "room": "鳳凰の間",
+  "floor": null,
+  "sqm": 722,
+  "school": 540,
+  "theater": 1014,
+  "banquet": 420,
+  "buffet": 500,
+  "url": "https://www.newotani.co.jp/tokyo/banquet/hall/"
+ },
+ {
+  "hotel": "ホテルニューオータニ東京",
+  "area": "千代田区/紀尾井町",
+  "access": "赤坂見附駅・四ツ谷駅 徒歩約10分",
+  "room": "芙蓉の間",
+  "floor": null,
+  "sqm": 1124,
+  "school": 780,
+  "theater": null,
+  "banquet": 630,
+  "buffet": 1500,
+  "url": "https://www.newotani.co.jp/tokyo/banquet/hall/"
+ },
+ {
+  "hotel": "ホテルオークラ東京(The Okura Tokyo)",
+  "area": "港区/虎ノ門",
+  "access": "神谷町駅 徒歩4分、六本木一丁目駅 徒歩5分",
+  "room": "平安の間",
+  "floor": null,
+  "sqm": 1968,
+  "school": null,
+  "theater": 2300,
+  "banquet": null,
+  "buffet": null,
+  "url": "https://theokuratokyo.jp/en/meetings-and-events/"
+ },
+ {
+  "hotel": "ホテルオークラ東京(The Okura Tokyo)",
+  "area": "港区/虎ノ門",
+  "access": "神谷町駅 徒歩4分、六本木一丁目駅 徒歩5分",
+  "room": "アスコットホール",
+  "floor": null,
+  "sqm": 1036,
+  "school": null,
+  "theater": null,
+  "banquet": null,
+  "buffet": null,
+  "url": "https://theokuratokyo.jp/en/meetings-and-events/"
+ },
+ {
+  "hotel": "ホテルオークラ東京(The Okura Tokyo)",
+  "area": "港区/虎ノ門",
+  "access": "神谷町駅 徒歩4分、六本木一丁目駅 徒歩5分",
+  "room": "オーチャード",
+  "floor": null,
+  "sqm": 678,
+  "school": 650,
+  "theater": null,
+  "banquet": 300,
+  "buffet": 600,
+  "url": "https://theokuratokyo.jp/en/meetings-and-events/"
+ },
+ {
+  "hotel": "パレスホテル東京",
+  "area": "千代田区/丸の内",
+  "access": "大手町駅 徒歩1分(直結)",
+  "room": "葵",
+  "floor": null,
+  "sqm": 1160,
+  "school": 900,
+  "theater": 1440,
+  "banquet": 630,
+  "buffet": 1200,
+  "url": "https://www.palacehoteltokyo.com/meetings-events/"
+ },
+ {
+  "hotel": "パレスホテル東京",
+  "area": "千代田区/丸の内",
+  "access": "大手町駅 徒歩1分(直結)",
+  "room": "山吹",
+  "floor": "4F",
+  "sqm": 563,
+  "school": null,
+  "theater": 720,
+  "banquet": null,
+  "buffet": 600,
+  "url": "https://www.palacehoteltokyo.com/meetings-events/"
+ },
+ {
+  "hotel": "パレスホテル東京",
+  "area": "千代田区/丸の内",
+  "access": "大手町駅 徒歩1分(直結)",
+  "room": "橘",
+  "floor": "2F",
+  "sqm": 215,
+  "school": 144,
+  "theater": 272,
+  "banquet": 100,
+  "buffet": 140,
+  "url": "https://www.palacehoteltokyo.com/meetings-events/"
+ },
+ {
+  "hotel": "パレスホテル東京",
+  "area": "千代田区/丸の内",
+  "access": "大手町駅 徒歩1分(直結)",
+  "room": "芙蓉",
+  "floor": "4F",
+  "sqm": 130,
+  "school": 90,
+  "theater": null,
+  "banquet": null,
+  "buffet": null,
+  "url": "https://www.palacehoteltokyo.com/meetings-events/"
+ },
+ {
+  "hotel": "パレスホテル東京",
+  "area": "千代田区/丸の内",
+  "access": "大手町駅 徒歩1分(直結)",
+  "room": "桔梗",
+  "floor": "4F",
+  "sqm": 84,
+  "school": 54,
+  "theater": null,
+  "banquet": null,
+  "buffet": null,
+  "url": "https://www.palacehoteltokyo.com/meetings-events/"
+ },
+ {
+  "hotel": "ザ・プリンスパークタワー東京",
+  "area": "港区/芝公園",
+  "access": "御成門駅・大門駅 徒歩約5〜8分",
+  "room": "コンベンションホール",
+  "floor": "B2F",
+  "sqm": 2394,
+  "school": 1800,
+  "theater": 3600,
+  "banquet": 1200,
+  "buffet": 3000,
+  "url": "https://www.princehotels.co.jp/parktower/banquet/"
+ },
+ {
+  "hotel": "ザ・プリンスパークタワー東京",
+  "area": "港区/芝公園",
+  "access": "御成門駅・大門駅 徒歩約5〜8分",
+  "room": "ボールルーム",
+  "floor": null,
+  "sqm": 2052,
+  "school": 1510,
+  "theater": 3000,
+  "banquet": 1020,
+  "buffet": 2500,
+  "url": "https://www.princehotels.co.jp/parktower/banquet/"
+ },
+ {
+  "hotel": "ザ・プリンスパークタワー東京",
+  "area": "港区/芝公園",
+  "access": "御成門駅・大門駅 徒歩約5〜8分",
+  "room": "プロビデンスホール",
+  "floor": null,
+  "sqm": 858,
+  "school": 400,
+  "theater": 900,
+  "banquet": 350,
+  "buffet": 800,
+  "url": "https://www.princehotels.co.jp/parktower/banquet/"
+ },
+ {
+  "hotel": "グランドプリンスホテル新高輪",
+  "area": "港区/高輪",
+  "access": "品川駅 徒歩約7分",
+  "room": "飛天",
+  "floor": "B1F",
+  "sqm": 2013,
+  "school": 1260,
+  "theater": 2400,
+  "banquet": 1134,
+  "buffet": 2200,
+  "url": "https://mice.princehotels.co.jp/hotel/shintakanawa/"
+ },
+ {
+  "hotel": "グランドプリンスホテル新高輪",
+  "area": "港区/高輪",
+  "access": "品川駅 徒歩約7分",
+  "room": "天平",
+  "floor": "3F",
+  "sqm": 416,
+  "school": 216,
+  "theater": 400,
+  "banquet": 150,
+  "buffet": 200,
+  "url": "https://mice.princehotels.co.jp/hotel/shintakanawa/"
+ },
+ {
+  "hotel": "グランドプリンスホテル新高輪",
+  "area": "港区/高輪",
+  "access": "品川駅 徒歩約7分",
+  "room": "平安",
+  "floor": "3F",
+  "sqm": 330,
+  "school": 192,
+  "theater": 324,
+  "banquet": 130,
+  "buffet": 170,
+  "url": "https://mice.princehotels.co.jp/hotel/shintakanawa/"
+ },
+ {
+  "hotel": "品川プリンスホテル",
+  "area": "港区/高輪",
+  "access": "品川駅高輪口 徒歩2分",
+  "room": "プリンスホール",
+  "floor": "5F",
+  "sqm": 2046,
+  "school": 1620,
+  "theater": 2400,
+  "banquet": 970,
+  "buffet": 2000,
+  "url": "https://www.princehotels.co.jp/shinagawa/banquet/"
+ },
+ {
+  "hotel": "品川プリンスホテル",
+  "area": "港区/高輪",
+  "access": "品川駅高輪口 徒歩2分",
+  "room": "メインタワー中宴会場",
+  "floor": null,
+  "sqm": 330,
+  "school": 210,
+  "theater": null,
+  "banquet": 144,
+  "buffet": 200,
+  "url": "https://www.princehotels.co.jp/shinagawa/banquet/"
+ },
+ {
+  "hotel": "ホテル椿山荘東京",
+  "area": "文京区/目白台",
+  "access": "目白駅・江戸川橋駅 徒歩8〜10分(送迎バスあり)",
+  "room": "グランドホール椿",
+  "floor": null,
+  "sqm": 1350,
+  "school": 1000,
+  "theater": 2000,
+  "banquet": 770,
+  "buffet": 2000,
+  "url": "https://hotel-chinzanso-tokyo.jp/banquet/hall/"
+ },
+ {
+  "hotel": "ホテル椿山荘東京",
+  "area": "文京区/目白台",
+  "access": "目白駅・江戸川橋駅 徒歩8〜10分(送迎バスあり)",
+  "room": "ボールルーム",
+  "floor": null,
+  "sqm": 634,
+  "school": 360,
+  "theater": 600,
+  "banquet": 300,
+  "buffet": 500,
+  "url": "https://hotel-chinzanso-tokyo.jp/banquet/hall/"
+ },
+ {
+  "hotel": "ホテル椿山荘東京",
+  "area": "文京区/目白台",
+  "access": "目白駅・江戸川橋駅 徒歩8〜10分(送迎バスあり)",
+  "room": "雅",
+  "floor": "4F",
+  "sqm": 557,
+  "school": null,
+  "theater": null,
+  "banquet": 260,
+  "buffet": null,
+  "url": "https://hotel-chinzanso-tokyo.jp/banquet/hall/"
+ },
+ {
+  "hotel": "京王プラザホテル",
+  "area": "新宿区/西新宿",
+  "access": "新宿駅西口 徒歩5分",
+  "room": "コンコードボールルーム",
+  "floor": null,
+  "sqm": 1320,
+  "school": 1026,
+  "theater": 1824,
+  "banquet": 960,
+  "buffet": 1120,
+  "url": "https://www.keioplaza.co.jp/banquet/hall/"
+ },
+ {
+  "hotel": "京王プラザホテル",
+  "area": "新宿区/西新宿",
+  "access": "新宿駅西口 徒歩5分",
+  "room": "エミネンスホール",
+  "floor": null,
+  "sqm": 715,
+  "school": 510,
+  "theater": 816,
+  "banquet": null,
+  "buffet": null,
+  "url": "https://www.keioplaza.co.jp/banquet/hall/"
+ },
+ {
+  "hotel": "京王プラザホテル",
+  "area": "新宿区/西新宿",
+  "access": "新宿駅西口 徒歩5分",
+  "room": "花",
+  "floor": null,
+  "sqm": 960,
+  "school": 450,
+  "theater": 900,
+  "banquet": 520,
+  "buffet": 700,
+  "url": "https://www.keioplaza.co.jp/banquet/hall/"
+ },
+ {
+  "hotel": "京王プラザホテル",
+  "area": "新宿区/西新宿",
+  "access": "新宿駅西口 徒歩5分",
+  "room": "グレースルーム",
+  "floor": null,
+  "sqm": 300,
+  "school": 144,
+  "theater": 210,
+  "banquet": null,
+  "buffet": 150,
+  "url": "https://www.keioplaza.co.jp/banquet/hall/"
+ },
+ {
+  "hotel": "ヒルトン東京",
+  "area": "新宿区/西新宿",
+  "access": "西新宿五丁目駅 徒歩4分",
+  "room": "菊（全室）",
+  "floor": "4F",
+  "sqm": 945,
+  "school": 450,
+  "theater": 1000,
+  "banquet": 450,
+  "buffet": 650,
+  "url": "https://tokyo.hiltonjapan.co.jp/mice/large"
+ },
+ {
+  "hotel": "ヒルトン東京",
+  "area": "新宿区/西新宿",
+  "access": "西新宿五丁目駅 徒歩4分",
+  "room": "菊1-3",
+  "floor": "4F",
+  "sqm": 798,
+  "school": null,
+  "theater": 700,
+  "banquet": 420,
+  "buffet": null,
+  "url": "https://tokyo.hiltonjapan.co.jp/mice/large"
+ },
+ {
+  "hotel": "ヒルトン東京",
+  "area": "新宿区/西新宿",
+  "access": "西新宿五丁目駅 徒歩4分",
+  "room": "藤（全室）",
+  "floor": "3F",
+  "sqm": 346,
+  "school": 250,
+  "theater": 440,
+  "banquet": 170,
+  "buffet": 250,
+  "url": "https://tokyo.hiltonjapan.co.jp/mice/medium"
+ },
+ {
+  "hotel": "ヒルトン東京",
+  "area": "新宿区/西新宿",
+  "access": "西新宿五丁目駅 徒歩4分",
+  "room": "桜（全室）",
+  "floor": "3F",
+  "sqm": 204,
+  "school": 100,
+  "theater": 180,
+  "banquet": 100,
+  "buffet": 100,
+  "url": "https://tokyo.hiltonjapan.co.jp/mice/medium"
+ },
+ {
+  "hotel": "ハイアットリージェンシー東京",
+  "area": "新宿区/西新宿",
+  "access": "西新宿駅 徒歩7分、都庁前駅 徒歩8分",
+  "room": "センチュリールーム",
+  "floor": "B1F",
+  "sqm": 790,
+  "school": 550,
+  "theater": 1000,
+  "banquet": 420,
+  "buffet": 700,
+  "url": "https://www.hyattregencytokyo.com/meeting_events/room/tabid/217/Default.aspx"
+ },
+ {
+  "hotel": "ハイアットリージェンシー東京",
+  "area": "新宿区/西新宿",
+  "access": "西新宿駅 徒歩7分、都庁前駅 徒歩8分",
+  "room": "クリスタルルーム",
+  "floor": null,
+  "sqm": 364,
+  "school": 240,
+  "theater": 450,
+  "banquet": 160,
+  "buffet": null,
+  "url": "https://www.hyattregencytokyo.com/meeting_events/room/tabid/217/Default.aspx"
+ },
+ {
+  "hotel": "ハイアットリージェンシー東京",
+  "area": "新宿区/西新宿",
+  "access": "西新宿駅 徒歩7分、都庁前駅 徒歩8分",
+  "room": "エクセレンス",
+  "floor": "27F",
+  "sqm": 246,
+  "school": 120,
+  "theater": 220,
+  "banquet": 80,
+  "buffet": 150,
+  "url": "https://www.hyattregencytokyo.com/meeting_events/room/tabid/217/Default.aspx"
+ },
+ {
+  "hotel": "ハイアットリージェンシー東京",
+  "area": "新宿区/西新宿",
+  "access": "西新宿駅 徒歩7分、都庁前駅 徒歩8分",
+  "room": "スカイルーム",
+  "floor": "28F",
+  "sqm": 244,
+  "school": 120,
+  "theater": 220,
+  "banquet": 80,
+  "buffet": null,
+  "url": "https://www.hyattregencytokyo.com/meeting_events/room/tabid/217/Default.aspx"
+ },
+ {
+  "hotel": "パークハイアット東京",
+  "area": "新宿区/西新宿",
+  "access": "都庁前駅 徒歩8分",
+  "room": "ボールルーム",
+  "floor": "39F",
+  "sqm": 405,
+  "school": 210,
+  "theater": 320,
+  "banquet": 220,
+  "buffet": 300,
+  "url": "https://www.parkhyatttokyo.com/Facility/Banquet/hall.html"
+ },
+ {
+  "hotel": "パークハイアット東京",
+  "area": "新宿区/西新宿",
+  "access": "都庁前駅 徒歩8分",
+  "room": "ヴェネシアンルーム",
+  "floor": "39F",
+  "sqm": 170,
+  "school": 90,
+  "theater": 150,
+  "banquet": 90,
+  "buffet": 100,
+  "url": "https://www.parkhyatttokyo.com/Facility/Banquet/hall.html"
+ },
+ {
+  "hotel": "パークハイアット東京",
+  "area": "新宿区/西新宿",
+  "access": "都庁前駅 徒歩8分",
+  "room": "ドローイングルーム",
+  "floor": "39F",
+  "sqm": 130,
+  "school": 48,
+  "theater": 88,
+  "banquet": 40,
+  "buffet": 50,
+  "url": "https://www.parkhyatttokyo.com/Facility/Banquet/hall.html"
+ },
+ {
+  "hotel": "ウェスティンホテル東京",
+  "area": "渋谷区/恵比寿",
+  "access": "恵比寿駅 徒歩7分(恵比寿ガーデンプレイス内)",
+  "room": "ギャラクシールーム",
+  "floor": "B2F",
+  "sqm": 1002,
+  "school": 750,
+  "theater": 1224,
+  "banquet": 520,
+  "buffet": 900,
+  "url": "https://www.westin-tokyo.co.jp/"
+ },
+ {
+  "hotel": "ウェスティンホテル東京",
+  "area": "渋谷区/恵比寿",
+  "access": "恵比寿駅 徒歩7分(恵比寿ガーデンプレイス内)",
+  "room": "スタールーム",
+  "floor": "B2F",
+  "sqm": 397,
+  "school": 300,
+  "theater": 400,
+  "banquet": 220,
+  "buffet": 280,
+  "url": "https://www.westin-tokyo.co.jp/"
+ },
+ {
+  "hotel": "セルリアンタワー東急ホテル",
+  "area": "渋谷区/桜丘町",
+  "access": "渋谷駅 徒歩4分",
+  "room": "セルリアンタワーボールルーム（全室）",
+  "floor": null,
+  "sqm": 1430,
+  "school": 850,
+  "theater": 1400,
+  "banquet": 700,
+  "buffet": 1300,
+  "url": "https://www.ceruleantower-hotel.com/banquet/spec/"
+ },
+ {
+  "hotel": "セルリアンタワー東急ホテル",
+  "area": "渋谷区/桜丘町",
+  "access": "渋谷駅 徒歩4分",
+  "room": "セルリアンタワーボールルーム 1/2",
+  "floor": null,
+  "sqm": 710,
+  "school": 400,
+  "theater": 700,
+  "banquet": 300,
+  "buffet": 600,
+  "url": "https://www.ceruleantower-hotel.com/banquet/spec/"
+ },
+ {
+  "hotel": "セルリアンタワー東急ホテル",
+  "area": "渋谷区/桜丘町",
+  "access": "渋谷駅 徒歩4分",
+  "room": "セルリアンタワーボールルーム 1/4",
+  "floor": null,
+  "sqm": 340,
+  "school": 200,
+  "theater": 300,
+  "banquet": 150,
+  "buffet": 250,
+  "url": "https://www.ceruleantower-hotel.com/banquet/spec/"
+ },
+ {
+  "hotel": "セルリアンタワー東急ホテル",
+  "area": "渋谷区/桜丘町",
+  "access": "渋谷駅 徒歩4分",
+  "room": "中宴会場 朝霧",
+  "floor": null,
+  "sqm": 200,
+  "school": 120,
+  "theater": 150,
+  "banquet": null,
+  "buffet": null,
+  "url": "https://www.ceruleantower-hotel.com/banquet/spec/"
+ },
+ {
+  "hotel": "ホテル雅叙園東京",
+  "area": "目黒区/下目黒",
+  "access": "目黒駅 徒歩3分",
+  "room": "華つどい（全室）",
+  "floor": "2F",
+  "sqm": 502,
+  "school": 480,
+  "theater": 700,
+  "banquet": null,
+  "buffet": null,
+  "url": "https://www.hotelgajoen-tokyo.com/party"
+ },
+ {
+  "hotel": "ホテル雅叙園東京",
+  "area": "目黒区/下目黒",
+  "access": "目黒駅 徒歩3分",
+  "room": "華つどい・華うたげ",
+  "floor": "2F",
+  "sqm": 228,
+  "school": 180,
+  "theater": 300,
+  "banquet": 120,
+  "buffet": 150,
+  "url": "https://www.hotelgajoen-tokyo.com/party"
+ },
+ {
+  "hotel": "ホテル雅叙園東京",
+  "area": "目黒区/下目黒",
+  "access": "目黒駅 徒歩3分",
+  "room": "ペガサス",
+  "floor": null,
+  "sqm": 204,
+  "school": 160,
+  "theater": 240,
+  "banquet": 90,
+  "buffet": 100,
+  "url": "https://www.hotelgajoen-tokyo.com/party"
+ },
+ {
+  "hotel": "東京ドームホテル",
+  "area": "文京区/後楽",
+  "access": "後楽園駅・水道橋駅 徒歩2〜3分",
+  "room": "天空（全室）",
+  "floor": "B1F",
+  "sqm": 1003,
+  "school": 888,
+  "theater": 1382,
+  "banquet": 530,
+  "buffet": 1000,
+  "url": "https://www.tokyodome-hotels.co.jp/banquet/venue-list/"
+ },
+ {
+  "hotel": "東京ドームホテル",
+  "area": "文京区/後楽",
+  "access": "後楽園駅・水道橋駅 徒歩2〜3分",
+  "room": "シンシア",
+  "floor": "B1F",
+  "sqm": 337,
+  "school": 252,
+  "theater": 376,
+  "banquet": 153,
+  "buffet": 220,
+  "url": "https://www.tokyodome-hotels.co.jp/banquet/venue-list/"
+ },
+ {
+  "hotel": "東京ドームホテル",
+  "area": "文京区/後楽",
+  "access": "後楽園駅・水道橋駅 徒歩2〜3分",
+  "room": "スカイバンケット シリウス",
+  "floor": "42F",
+  "sqm": 155,
+  "school": 72,
+  "theater": 128,
+  "banquet": 70,
+  "buffet": 100,
+  "url": "https://www.tokyodome-hotels.co.jp/banquet/venue-list/"
+ },
+ {
+  "hotel": "グランドハイアット東京",
+  "area": "港区/六本木",
+  "access": "六本木駅 徒歩3分(六本木ヒルズ内)",
+  "room": "グランド ボールルーム",
+  "floor": null,
+  "sqm": null,
+  "school": 720,
+  "theater": 1200,
+  "banquet": 600,
+  "buffet": 1000,
+  "url": "https://www.tokyo.grand.hyatt.co.jp/banquets/meeting-room/"
+ },
+ {
+  "hotel": "グランドハイアット東京",
+  "area": "港区/六本木",
+  "access": "六本木駅 徒歩3分(六本木ヒルズ内)",
+  "room": "レジデンス アニス",
+  "floor": null,
+  "sqm": null,
+  "school": 105,
+  "theater": 220,
+  "banquet": 120,
+  "buffet": 120,
+  "url": "https://www.tokyo.grand.hyatt.co.jp/banquets/meeting-room/"
+ },
+ {
+  "hotel": "グランドハイアット東京",
+  "area": "港区/六本木",
+  "access": "六本木駅 徒歩3分(六本木ヒルズ内)",
+  "room": "グランド ボールルーム ウエスト",
+  "floor": null,
+  "sqm": null,
+  "school": null,
+  "theater": null,
+  "banquet": null,
+  "buffet": null,
+  "url": "https://www.tokyo.grand.hyatt.co.jp/banquets/meeting-room/"
+ },
+ {
+  "hotel": "ANAインターコンチネンタルホテル東京",
+  "area": "港区/赤坂",
+  "access": "溜池山王駅 徒歩1分(直結)",
+  "room": "プロミネンス",
+  "floor": "B1F",
+  "sqm": 1565,
+  "school": 1080,
+  "theater": 2000,
+  "banquet": 870,
+  "buffet": 2200,
+  "url": "https://anaintercontinental-tokyo.jp/meet/"
+ },
+ {
+  "hotel": "ANAインターコンチネンタルホテル東京",
+  "area": "港区/赤坂",
+  "access": "溜池山王駅 徒歩1分(直結)",
+  "room": "ギャラクシー",
+  "floor": null,
+  "sqm": null,
+  "school": null,
+  "theater": 734,
+  "banquet": 280,
+  "buffet": 550,
+  "url": "https://anaintercontinental-tokyo.jp/meet/"
+ },
+ {
+  "hotel": "ANAインターコンチネンタルホテル東京",
+  "area": "港区/赤坂",
+  "access": "溜池山王駅 徒歩1分(直結)",
+  "room": "グローリー",
+  "floor": null,
+  "sqm": null,
+  "school": null,
+  "theater": 199,
+  "banquet": 90,
+  "buffet": 130,
+  "url": "https://anaintercontinental-tokyo.jp/meet/"
+ },
+ {
+  "hotel": "ザ・リッツ・カールトン東京",
+  "area": "港区/六本木(東京ミッドタウン内)",
+  "access": "六本木駅 徒歩3分",
+  "room": "グランドボールルーム",
+  "floor": "2F",
+  "sqm": null,
+  "school": 330,
+  "theater": 500,
+  "banquet": 270,
+  "buffet": 400,
+  "url": "https://www.ritzcarlton.com/en/hotels/tyorz-the-ritz-carlton-tokyo/events/"
+ },
+ {
+  "hotel": "ザ・リッツ・カールトン東京",
+  "area": "港区/六本木(東京ミッドタウン内)",
+  "access": "六本木駅 徒歩3分",
+  "room": "パークビュールーム",
+  "floor": null,
+  "sqm": null,
+  "school": null,
+  "theater": null,
+  "banquet": 80,
+  "buffet": null,
+  "url": "https://www.ritzcarlton.com/en/hotels/tyorz-the-ritz-carlton-tokyo/events/"
+ },
+ {
+  "hotel": "ザ・リッツ・カールトン東京",
+  "area": "港区/六本木(東京ミッドタウン内)",
+  "access": "六本木駅 徒歩3分",
+  "room": "ボールルーム II・III(グランドボールルーム分割区画)",
+  "floor": "2F",
+  "sqm": null,
+  "school": null,
+  "theater": null,
+  "banquet": 100,
+  "buffet": null,
+  "url": "https://www.ritzcarlton.com/en/hotels/tyorz-the-ritz-carlton-tokyo/events/"
+ },
+ {
+  "hotel": "マンダリンオリエンタル東京",
+  "area": "中央区/日本橋",
+  "access": "三越前駅 徒歩1分(直結)",
+  "room": "グランド ボールルーム",
+  "floor": "3F",
+  "sqm": 550,
+  "school": null,
+  "theater": 500,
+  "banquet": 250,
+  "buffet": null,
+  "url": "https://www.mandarinoriental.co.jp/tokyo/nihonbashi/luxury-hotel/venues/event-facilities"
+ },
+ {
+  "hotel": "マンダリンオリエンタル東京",
+  "area": "中央区/日本橋",
+  "access": "三越前駅 徒歩1分(直結)",
+  "room": "リンデン ルーム",
+  "floor": null,
+  "sqm": null,
+  "school": null,
+  "theater": null,
+  "banquet": null,
+  "buffet": null,
+  "url": "https://www.mandarinoriental.co.jp/tokyo/nihonbashi/luxury-hotel/venues/event-facilities"
+ },
+ {
+  "hotel": "マンダリンオリエンタル東京",
+  "area": "中央区/日本橋",
+  "access": "三越前駅 徒歩1分(直結)",
+  "room": "オーク ルーム",
+  "floor": null,
+  "sqm": null,
+  "school": null,
+  "theater": null,
+  "banquet": null,
+  "buffet": null,
+  "url": "https://www.mandarinoriental.co.jp/tokyo/nihonbashi/luxury-hotel/venues/event-facilities"
+ },
+ {
+  "hotel": "コンラッド東京",
+  "area": "港区/汐留",
+  "access": "汐留駅 徒歩1分、新橋駅 徒歩5分",
+  "room": "風波(かざなみ)",
+  "floor": null,
+  "sqm": null,
+  "school": null,
+  "theater": null,
+  "banquet": 272,
+  "buffet": null,
+  "url": "https://conrad-tokyo.hiltonjapan.co.jp/mice/"
+ },
+ {
+  "hotel": "コンラッド東京",
+  "area": "港区/汐留",
+  "access": "汐留駅 徒歩1分、新橋駅 徒歩5分",
+  "room": "浜離宮",
+  "floor": null,
+  "sqm": null,
+  "school": null,
+  "theater": null,
+  "banquet": 112,
+  "buffet": null,
+  "url": "https://conrad-tokyo.hiltonjapan.co.jp/mice/"
+ },
+ {
+  "hotel": "シャングリ・ラ東京",
+  "area": "千代田区/丸の内",
+  "access": "東京駅 徒歩1分(直結)",
+  "room": "シャングリ・ラ ボールルーム",
+  "floor": null,
+  "sqm": 366,
+  "school": 189,
+  "theater": 300,
+  "banquet": 180,
+  "buffet": 250,
+  "url": "https://www.shangri-la.com/jp/tokyo/shangrila/meetings-events/event-spaces/"
+ },
+ {
+  "hotel": "シャングリ・ラ東京",
+  "area": "千代田区/丸の内",
+  "access": "東京駅 徒歩1分(直結)",
+  "room": "コンウェイルーム3",
+  "floor": "27F",
+  "sqm": 129,
+  "school": 63,
+  "theater": 100,
+  "banquet": 60,
+  "buffet": 60,
+  "url": "https://www.shangri-la.com/jp/tokyo/shangrila/meetings-events/event-spaces/"
+ },
+ {
+  "hotel": "シャングリ・ラ東京",
+  "area": "千代田区/丸の内",
+  "access": "東京駅 徒歩1分(直結)",
+  "room": "コンウェイルーム1",
+  "floor": "27F",
+  "sqm": 79,
+  "school": 36,
+  "theater": 60,
+  "banquet": 30,
+  "buffet": null,
+  "url": "https://www.shangri-la.com/jp/tokyo/shangrila/meetings-events/event-spaces/"
+ },
+ {
+  "hotel": "シャングリ・ラ東京",
+  "area": "千代田区/丸の内",
+  "access": "東京駅 徒歩1分(直結)",
+  "room": "コンウェイルーム2",
+  "floor": "27F",
+  "sqm": 55,
+  "school": 24,
+  "theater": 36,
+  "banquet": 20,
+  "buffet": 30,
+  "url": "https://www.shangri-la.com/jp/tokyo/shangrila/meetings-events/event-spaces/"
+ },
+ {
+  "hotel": "シャングリ・ラ東京",
+  "area": "千代田区/丸の内",
+  "access": "東京駅 徒歩1分(直結)",
+  "room": "ザ・パビリオン",
+  "floor": "27F",
+  "sqm": 126,
+  "school": 54,
+  "theater": 96,
+  "banquet": 60,
+  "buffet": 60,
+  "url": "https://www.shangri-la.com/jp/tokyo/shangrila/meetings-events/event-spaces/"
+ },
+ {
+  "hotel": "ロイヤルパークホテル",
+  "area": "中央区/日本橋蛎殻町",
+  "access": "水天宮前駅 徒歩1分(直結)",
+  "room": "ロイヤルホール",
+  "floor": null,
+  "sqm": 1000,
+  "school": 700,
+  "theater": 1200,
+  "banquet": 600,
+  "buffet": 1000,
+  "url": "https://www.rph.co.jp/banquet/"
+ },
+ {
+  "hotel": "ロイヤルパークホテル",
+  "area": "中央区/日本橋蛎殻町",
+  "access": "水天宮前駅 徒歩1分(直結)",
+  "room": "有明",
+  "floor": null,
+  "sqm": 325,
+  "school": 180,
+  "theater": 350,
+  "banquet": 180,
+  "buffet": null,
+  "url": "https://www.rph.co.jp/banquet/"
+ },
+ {
+  "hotel": "ロイヤルパークホテル",
+  "area": "中央区/日本橋蛎殻町",
+  "access": "水天宮前駅 徒歩1分(直結)",
+  "room": "春海",
+  "floor": null,
+  "sqm": 260,
+  "school": 180,
+  "theater": 300,
+  "banquet": 180,
+  "buffet": null,
+  "url": "https://www.rph.co.jp/banquet/"
+ },
+ {
+  "hotel": "第一ホテル東京",
+  "area": "港区/新橋",
+  "access": "新橋駅 徒歩2分",
+  "room": "ラ・ローズ",
+  "floor": null,
+  "sqm": 581,
+  "school": 400,
+  "theater": 650,
+  "banquet": 360,
+  "buffet": 500,
+  "url": "https://www.hankyu-hotel.com/hotel/dh/dhtokyo/banquet_rooms"
+ },
+ {
+  "hotel": "第一ホテル東京",
+  "area": "港区/新橋",
+  "access": "新橋駅 徒歩2分",
+  "room": "ルミエール",
+  "floor": "21F",
+  "sqm": 180,
+  "school": 72,
+  "theater": 100,
+  "banquet": 64,
+  "buffet": 80,
+  "url": "https://www.hankyu-hotel.com/hotel/dh/dhtokyo/banquet_rooms"
+ },
+ {
+  "hotel": "グランドニッコー東京台場",
+  "area": "港区/台場",
+  "access": "台場駅 徒歩3分",
+  "room": "パレロワイヤル",
+  "floor": null,
+  "sqm": 2580,
+  "school": 1632,
+  "theater": 3300,
+  "banquet": 1688,
+  "buffet": 3200,
+  "url": "https://www.tokyo.grandnikko.com/banquet/"
+ },
+ {
+  "hotel": "グランドニッコー東京台場",
+  "area": "港区/台場",
+  "access": "台場駅 徒歩3分",
+  "room": "ヴァンドーム",
+  "floor": null,
+  "sqm": 260,
+  "school": null,
+  "theater": null,
+  "banquet": 168,
+  "buffet": 180,
+  "url": "https://www.tokyo.grandnikko.com/banquet/middle_hall/"
+ },
+ {
+  "hotel": "グランドニッコー東京台場",
+  "area": "港区/台場",
+  "access": "台場駅 徒歩3分",
+  "room": "エトワール",
+  "floor": null,
+  "sqm": 260,
+  "school": null,
+  "theater": null,
+  "banquet": null,
+  "buffet": null,
+  "url": "https://www.tokyo.grandnikko.com/banquet/middle_hall/"
+ },
+ {
+  "hotel": "グランドニッコー東京台場",
+  "area": "港区/台場",
+  "access": "台場駅 徒歩3分",
+  "room": "シャトレ",
+  "floor": null,
+  "sqm": 260,
+  "school": null,
+  "theater": null,
+  "banquet": null,
+  "buffet": null,
+  "url": "https://www.tokyo.grandnikko.com/banquet/middle_hall/"
+ }
 ];
 
-let vSortK = "name", vSortAsc = true, venuesInit = false;
+let vSortK = "school", vSortAsc = false, venuesInit = false;
 function venueSetup(){
   if (venuesInit) return; venuesInit = true;
+  fillSelect(document.getElementById("v_hotel"), "ホテル", VENUES.map(v => v.hotel));
   fillSelect(document.getElementById("v_area"), "エリア", VENUES.map(v => v.area));
-  document.getElementById("v_area").addEventListener("change", renderVenues);
+  ["v_hotel","v_area","v_layout","v_size"].forEach(id =>
+    document.getElementById(id).addEventListener("change", renderVenues));
   const vq = document.getElementById("v_q");
   vq.addEventListener("input", () => { clearTimeout(window.__vqt); window.__vqt = setTimeout(renderVenues, 250); });
   document.querySelectorAll("#venues th[data-vk]").forEach(th => th.addEventListener("click", () => {
     const k = th.dataset.vk;
     if (vSortK === k) vSortAsc = !vSortAsc;
-    else { vSortK = k; vSortAsc = (k === "name" || k === "area"); }
+    else { vSortK = k; vSortAsc = (k === "hotel" || k === "area" || k === "room"); }
     renderVenues();
   }));
 }
 function renderVenues(){
   venueSetup();
   const q = document.getElementById("v_q").value.trim().toLowerCase();
+  const hotel = document.getElementById("v_hotel").value;
   const area = document.getElementById("v_area").value;
+  const layout = document.getElementById("v_layout").value;
+  const size = document.getElementById("v_size").value;
+  let lo = 0, hi = Infinity;
+  if (size) { const p = size.split("-"); lo = +p[0]; hi = p[1] === "" ? Infinity : +p[1]; }
   const rows = VENUES.filter(v =>
+    (!hotel || v.hotel === hotel) &&
     (!area || v.area === area) &&
-    (!q || (v.name + " " + v.area + " " + (v.access||"") + " " + (v.largestRoom||"") + " " +
-            (v.features||[]).join(" ")).toLowerCase().includes(q))
+    (!size || (v[layout] != null && v[layout] >= lo && v[layout] <= hi)) &&
+    (!q || (v.hotel + " " + v.area + " " + (v.access||"") + " " + v.room + " " + (v.floor||""))
+             .toLowerCase().includes(q))
   );
-  const num = k => v => (v[k] == null ? -1 : v[k]);
+  const NUM = {sqm:1, school:1, theater:1, banquet:1, buffet:1};
   rows.sort((a,b) => {
     let x, y;
-    if (vSortK === "capacity" || vSortK === "rooms") { x = num(vSortK)(a); y = num(vSortK)(b); }
+    if (NUM[vSortK]) { x = a[vSortK] == null ? -1 : a[vSortK]; y = b[vSortK] == null ? -1 : b[vSortK]; }
     else { x = a[vSortK] || ""; y = b[vSortK] || ""; }
-    return (x < y ? -1 : x > y ? 1 : 0) * (vSortAsc ? 1 : -1);
+    if (x === y) { const s = b.school == null ? -1 : b.school; const t = a.school == null ? -1 : a.school; return s - t; }
+    return (x < y ? -1 : 1) * (vSortAsc ? 1 : -1);
   });
+  const n = v => v == null ? "—" : v.toLocaleString();
   const tb = document.getElementById("vtb");
   tb.innerHTML = "";
   const frag = document.createDocumentFragment();
   rows.forEach(v => {
     const tr = document.createElement("tr");
-    const cap = v.largestRoom
-      ? esc(v.largestRoom) + (v.capacity != null ? "（〜" + v.capacity.toLocaleString() + "名）" : "")
-      : (v.capacity != null ? "〜" + v.capacity.toLocaleString() + "名" : "—");
     tr.innerHTML =
       '<td class="title">' + (v.url
-        ? '<a href="' + esc(v.url) + '" target="_blank" rel="noopener">' + esc(v.name) + "</a>"
-        : esc(v.name)) + "</td>" +
+        ? '<a href="' + esc(v.url) + '" target="_blank" rel="noopener" title="' + esc(v.access||"") + '">' + esc(v.hotel) + "</a>"
+        : '<span title="' + esc(v.access||"") + '">' + esc(v.hotel) + "</span>") + "</td>" +
       "<td>" + esc(v.area) + "</td>" +
-      "<td>" + esc(v.access || "—") + "</td>" +
-      "<td>" + cap + "</td>" +
-      '<td style="white-space:nowrap">' + (v.rooms != null ? v.rooms : "—") + "</td>" +
-      "<td>" + (v.features||[]).map(f => '<span class="tag">' + esc(f) + "</span>").join("") + "</td>";
+      "<td>" + esc(v.room) + (v.floor ? ' <span style="color:var(--muted);font-size:11px">' + esc(v.floor) + "</span>" : "") + "</td>" +
+      '<td class="vnum">' + n(v.sqm) + "</td>" +
+      '<td class="vnum' + (layout === "school" ? " vsel" : "") + '">' + n(v.school) + "</td>" +
+      '<td class="vnum' + (layout === "theater" ? " vsel" : "") + '">' + n(v.theater) + "</td>" +
+      '<td class="vnum' + (layout === "banquet" ? " vsel" : "") + '">' + n(v.banquet) + "</td>" +
+      '<td class="vnum' + (layout === "buffet" ? " vsel" : "") + '">' + n(v.buffet) + "</td>";
     frag.appendChild(tr);
   });
   tb.appendChild(frag);
-  document.getElementById("v_stats").textContent = rows.length + " / " + VENUES.length + " 件";
+  const hotels = new Set(rows.map(v => v.hotel)).size;
+  document.getElementById("v_stats").textContent =
+    rows.length + " / " + VENUES.length + " 室（" + hotels + "ホテル）※人数・面積は公式公表値ベースの目安";
 }
 
 async function unlock(){
